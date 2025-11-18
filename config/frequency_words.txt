@@ -56,7 +56,7 @@ ipad
 mac
 ios
 macos
-苹果
+apple
 
 ai
 !gai
