@@ -1,14 +1,6 @@
 name: Hot News Crawler
 on:
   schedule:
-    # ⚠️ 重要提示：我们使用的是 GitHub 官方提供的资源来进行的推送，而每个账号的资源是限额的 
-    # 为了不被官方判定为滥用而面临封号的风险，不建议设置比半小时更短的执行间隔
-    #
-    # Cron 表达式示例（注意：GitHub Actions 使用 UTC 时间，北京时间需要减 8 小时）:
-    # - "0 * * * *"         # 每小时整点运行一次（实际有偏差）
-    # - "*/30 * * * *"      # 每 30 分钟执行一次
-    # - "*/30 0-14 * * *"   # 每天 UTC 0:00-14:00（北京时间 8:00-22:00），每 30 分钟运行一次
-    # - "0 0,6,12,18 * * *" # 每天 UTC 0:00,6:00,12:00,18:00（北京时间 8:00,14:00,20:00,次日2:00）
     - cron: "0 * * * *"
   workflow_dispatch:
 
@@ -18,6 +10,8 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   crawl:
@@ -45,16 +39,16 @@ jobs:
           
       - name: Verify required files
         run: |
-          echo "🔍 检查必需的配置文件..."
+          echo "🔍 Checking required config files..."
           if [ ! -f config/config.yaml ]; then
-            echo "❌ 错误: config/config.yaml 文件不存在"
+            echo "❌ Error: config/config.yaml missing"
             exit 1
           fi
           if [ ! -f config/frequency_words.txt ]; then
-            echo "❌ 错误: config/frequency_words.txt 文件不存在"
+            echo "❌ Error: config/frequency_words.txt missing"
             exit 1
           fi
-          echo "✅ 配置文件检查通过"
+          echo "✅ Config files OK"
           
       - name: Run crawler
         env:
@@ -107,3 +101,20 @@ jobs:
           
           echo "❌ Failed to push after 5 attempts"
           exit 1
+
+      # ⭐⭐⭐ اضافه شده برای GitHub Pages ⭐⭐⭐
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./output   # جایی که index.html ساخته می‌شود
+
+  # ⭐⭐⭐ مرحله‌ی انتشار GitHub Pages ⭐⭐⭐
+  deploy:
+    needs: crawl
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v2
